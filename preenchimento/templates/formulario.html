@@ -1,0 +1,16 @@
+<form method="post">
+    {% csrf_token %}
+    <label>Objeto:</label><br>
+    <input type="text" name="objeto" required><br>
+
+    <label>Justificativa:</label><br>
+    <textarea name="justificativa" required></textarea><br>
+
+    <label>Processo Administrativo:</label><br>
+    <input type="text" name="processo_administrativo" required><br>
+
+    <label>Prazo de Vigência:</label><br>
+    <input type="text" name="prazo_vigencia" required><br>
+
+    <button type="submit">Gerar Documento</button>
+</form>

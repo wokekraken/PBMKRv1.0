@@ -1,0 +1,18 @@
+<form method="post">
+    {% csrf_token %}
+    <label>Selecione a Modalidade:</label><br>
+    <select name="modalidade" required>
+        <option value="dispensa">Dispensa de Licitação</option>
+        <option value="licitacao">Licitação</option>
+        <option value="registro">Registro de Preços</option>
+    </select><br>
+
+    <label>Tipo:</label><br>
+    <select name="tipo" required>
+        <option value="servicos">Serviços</option>
+        <option value="materiais">Materiais/Consumo</option>
+    </select><br>
+
+    <button type="submit">Avançar</button>
+</form>
+
