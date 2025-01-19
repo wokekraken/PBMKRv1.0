@@ -1,44 +1,52 @@
+import errno
+import socket
+from django.http import HttpResponseServerError
 from django.shortcuts import render
 from django.http import HttpResponse
 from docx import Document
 from .forms import CamposDinamicosForm, ItensForm
 
 def preencher_documento(request):
-    if request.method == "POST":
-        # Coleta os dados do formulário
-        form_dinamico = CamposDinamicosForm(request.POST)
-        form_itens = ItensForm(request.POST)
+    try:
+        if request.method == "POST":
+            # Coleta os dados do formulário
+            form_dinamico = CamposDinamicosForm(request.POST)
+            form_itens = ItensForm(request.POST)
 
-        if form_dinamico.is_valid() and form_itens.is_valid():
-            # Dados dos formulários
-            dados_dinamicos = form_dinamico.cleaned_data
-            num_itens = form_itens.cleaned_data["num_itens"]
-            num_lotes = form_itens.cleaned_data["num_lotes"]
+            if form_dinamico.is_valid() and form_itens.is_valid():
+                # Dados dos formulários
+                dados_dinamicos = form_dinamico.cleaned_data
+                num_itens = form_itens.cleaned_data["num_itens"]
+                num_lotes = form_itens.cleaned_data["num_lotes"]
 
-            # Carrega o template do documento
-            doc = Document("template.docx")
+                # Carrega o template do documento
+                doc = Document("template.docx")
 
-            # Preenche os placeholders gerais
-            preencher_placeholders(doc, dados_dinamicos)
+                # Preenche os placeholders gerais
+                preencher_placeholders(doc, dados_dinamicos)
 
-            # Adiciona itens e lotes na tabela
-            adicionar_itens_e_lotes(doc, num_itens, num_lotes)
+                # Adiciona itens e lotes na tabela
+                adicionar_itens_e_lotes(doc, num_itens, num_lotes)
 
-            # Valida os placeholders
-            validate_placeholders(doc)
+                # Valida os placeholders
+                validate_placeholders(doc)
 
-            # Retorna o documento gerado
-            response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-            response["Content-Disposition"] = 'attachment; filename="projeto_basico.docx"'
-            doc.save(response)
-            return response
+                # Retorna o documento gerado
+                response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+                response["Content-Disposition"] = 'attachment; filename="projeto_basico.docx"'
+                doc.save(response)
+                return response
 
-    else:
-        form_dinamico = CamposDinamicosForm()
-        form_itens = ItensForm()
+        else:
+            form_dinamico = CamposDinamicosForm()
+            form_itens = ItensForm()
 
-    return render(request, "formulario.html", {"form_dinamico": form_dinamico, "form_itens": form_itens})
+        return render(request, "formulario.html", {"form_dinamico": form_dinamico, "form_itens": form_itens})
 
+    except socket.error as e:
+        if e.errno != errno.EPIPE:
+            raise
+        return HttpResponseServerError("Erro de conexão: Broken pipe")
 
 def preencher_placeholders(doc, dados):
     """Substitui os placeholders no documento com os dados fornecidos."""
@@ -54,7 +62,6 @@ def preencher_placeholders(doc, dados):
             if placeholder in p.text:
                 p.text = p.text.replace(placeholder, valor)
 
-
 def adicionar_itens_e_lotes(doc, num_itens, num_lotes):
     """Adiciona itens e lotes dinamicamente na tabela do documento."""
     table = doc.tables[0]  # Supondo que a tabela é a primeira
@@ -69,10 +76,8 @@ def adicionar_itens_e_lotes(doc, num_itens, num_lotes):
             row[4].text = "Preço Unitário"
             row[5].text = "Preço Total"
 
-
 def validate_placeholders(doc):
     """Valida se todos os placeholders foram preenchidos."""
     for p in doc.paragraphs:
         if "<<" in p.text and ">>" in p.text:
             raise ValueError(f"Placeholder não preenchido: {p.text}")
-
